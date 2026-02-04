@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from groq import Groq
 from dotenv import load_dotenv
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # .env 파일에서 환경 변수 로드
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend', static_url_path='/')
 # 프론트엔드からの 모든 출처에서의 요청을 허용
 CORS(app) 
 
@@ -19,6 +19,18 @@ try:
 except Exception as e:
     groq_client = None
     print(f"Error initializing Groq client: {e}")
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'css'), filename)
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'js'), filename)
 
 @app.route('/api/convert', methods=['POST'])
 def convert_text():
@@ -43,10 +55,6 @@ def convert_text():
     }
     
     return jsonify(response_data)
-
-@app.route('/')
-def index():
-    return "BizTone Converter 백엔드 서버가 실행 중입니다."
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
